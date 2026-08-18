@@ -19,6 +19,9 @@
 
 package com.puppycrawl.tools.checkstyle.filesgenerator.site;
 
+import java.lang.reflect.Field;
+import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.Proxy;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Set;
@@ -37,6 +40,10 @@ import org.codehaus.plexus.component.annotations.Component;
 @Component(role = Macro.class, hint = "violation-messages")
 public class ViolationMessagesMacro extends AbstractMacro {
 
+    /** EventCapturingSinkProxy class name. */
+    private static final String EVENT_CAPTURING_SINK_PROXY =
+            "org.apache.maven.doxia.sink.impl.EventCapturingSinkProxy";
+
     /**
      * Creates a new {@code ViolationMessagesMacro} instance.
      */
@@ -46,8 +53,23 @@ public class ViolationMessagesMacro extends AbstractMacro {
 
     @Override
     public void execute(Sink sink, MacroRequest request) throws MacroExecutionException {
-        // until https://github.com/checkstyle/checkstyle/issues/13426
-        if (!(sink instanceof XdocSink xdocSink)) {
+        // Unwrap EventCapturingSinkProxy if present (Doxia 2.1.0 wraps sinks in proxies)
+        Object unwrappedSink = sink;
+        if (sink.getClass().getName().contains("Proxy")) {
+            try {
+                InvocationHandler handler = Proxy.getInvocationHandler(sink);
+                if (handler.getClass().getName().equals(EVENT_CAPTURING_SINK_PROXY)) {
+                    Field sinkField = handler.getClass().getDeclaredField("sink");
+                    sinkField.setAccessible(true);
+                    unwrappedSink = sinkField.get(handler);
+                }
+            }
+            catch (Exception ex) {
+                // Fall through to original sink if unwrapping fails
+            }
+        }
+
+        if (!(unwrappedSink instanceof XdocSink xdocSink)) {
             throw new MacroExecutionException("Expected Sink to be an XdocSink.");
         }
         final String checkName = (String) request.getParameter("checkName");
@@ -105,16 +127,29 @@ public class ViolationMessagesMacro extends AbstractMacro {
 
         // Place an <a>.
         sink.rawText(indentLevel12);
-        sink.link(messageKeyUrl);
+        sink.rawText("<a href=\"" + escapeXml(messageKeyUrl) + "\">");
         // Further indent the text.
         sink.rawText(indentLevel14);
         sink.rawText(messageKey);
 
         // Place closing </a> and </li> tags.
         sink.rawText(indentLevel12);
-        sink.link_();
+        sink.rawText("</a>");
         sink.rawText(indentLevel10);
         sink.listItem_();
+    }
+
+    /**
+     * Escapes XML special characters in a string.
+     *
+     * @param value the string to escape.
+     * @return the escaped string.
+     */
+    private static String escapeXml(String value) {
+        return value.replace("&", "&amp;")
+                .replace("<", "&lt;")
+                .replace(">", "&gt;")
+                .replace("\"", "&quot;");
     }
 
     /**

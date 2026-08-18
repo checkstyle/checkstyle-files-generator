@@ -19,6 +19,9 @@
 
 package com.puppycrawl.tools.checkstyle.filesgenerator.site;
 
+import java.lang.reflect.Field;
+import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.Proxy;
 import java.nio.file.Path;
 import java.util.Locale;
 
@@ -36,6 +39,10 @@ import org.codehaus.plexus.component.annotations.Component;
 @Component(role = Macro.class, hint = "parent-module")
 public class ParentModuleMacro extends AbstractMacro {
 
+    /** EventCapturingSinkProxy class name. */
+    private static final String EVENT_CAPTURING_SINK_PROXY =
+            "org.apache.maven.doxia.sink.impl.EventCapturingSinkProxy";
+
     /**
      * Creates a new {@code ParentModuleMacro} instance.
      */
@@ -45,8 +52,22 @@ public class ParentModuleMacro extends AbstractMacro {
 
     @Override
     public void execute(Sink sink, MacroRequest request) throws MacroExecutionException {
-        // until https://github.com/checkstyle/checkstyle/issues/13426
-        if (!(sink instanceof XdocSink xdocSink)) {
+        Object unwrappedSink = sink;
+        if (sink.getClass().getName().contains("Proxy")) {
+            try {
+                InvocationHandler handler = Proxy.getInvocationHandler(sink);
+                if (handler.getClass().getName().equals(EVENT_CAPTURING_SINK_PROXY)) {
+                    Field sinkField = handler.getClass().getDeclaredField("sink");
+                    sinkField.setAccessible(true);
+                    unwrappedSink = sinkField.get(handler);
+                }
+            }
+            catch (Exception ex) {
+                // Fall through to original sink if unwrapping fails
+            }
+        }
+
+        if (!(unwrappedSink instanceof XdocSink xdocSink)) {
             throw new MacroExecutionException("Expected Sink to be an XdocSink.");
         }
         final String moduleName = (String) request.getParameter("moduleName");
@@ -72,11 +93,24 @@ public class ParentModuleMacro extends AbstractMacro {
         sink.paragraph();
         sink.setInsertNewline(true);
         sink.rawText(ModuleJavadocParsingUtil.INDENT_LEVEL_10);
-        sink.link(linkToParentModule);
+        sink.rawText("<a href=\"" + escapeXml(linkToParentModule) + "\">");
         sink.text(parentModule);
-        sink.link_();
+        sink.rawText("</a>");
         sink.rawText(ModuleJavadocParsingUtil.INDENT_LEVEL_8);
         sink.paragraph_();
+    }
+
+    /**
+     * Escapes XML special characters in a string.
+     *
+     * @param value the string to escape.
+     * @return the escaped string.
+     */
+    private static String escapeXml(String value) {
+        return value.replace("&", "&amp;")
+                .replace("<", "&lt;")
+                .replace(">", "&gt;")
+                .replace("\"", "&quot;");
     }
 
     /**
