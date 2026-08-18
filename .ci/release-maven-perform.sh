@@ -4,6 +4,10 @@ set -euo pipefail
 
 source ./.ci/util.sh
 
+checkForVariable "SONATYPE_USER"
+checkForVariable "SONATYPE_PWD"
+checkForVariable "MAVEN_GPG_PASSPHRASE"
+
 if [[ -z $1 ]]; then
   echo "version is not set"
   echo "Usage: $0 <version>"
