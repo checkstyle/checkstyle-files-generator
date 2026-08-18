@@ -4,14 +4,14 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
-  <groupId>io.github.stoyank7</groupId>
+  <groupId>com.puppycrawl.tools</groupId>
   <artifactId>checkstyle-files-generator</artifactId>
-  <version>1.0.4</version>
+  <version>1.0.0</version>
   <packaging>jar</packaging>
 
   <name>checkstyle-files-generator</name>
   <description>Utility for generating Checkstyle metadata and XDoc files.</description>
-  <url>https://github.com/stoyanK7/checkstyle-files-generator</url>
+  <url>https://github.com/checkstyle/checkstyle-files-generator</url>
 
   <licenses>
     <license>
@@ -22,16 +22,15 @@
 
   <developers>
     <developer>
-      <id>stoyanK7</id>
-      <name>Stoyan Kostadinov</name>
-      <url>https://github.com/stoyanK7</url>
+      <id>romani</id>
+      <name>Roman Ivanov</name>
     </developer>
   </developers>
 
   <scm>
-    <connection>scm:git:https://github.com/stoyanK7/checkstyle-files-generator.git</connection>
-    <developerConnection>scm:git:git@github.com:stoyanK7/checkstyle-files-generator.git</developerConnection>
-    <url>https://github.com/stoyanK7/checkstyle-files-generator</url>
+    <connection>scm:git:https://github.com/checkstyle/checkstyle-files-generator.git</connection>
+    <developerConnection>scm:git:git@github.com:checkstyle/checkstyle-files-generator.git</developerConnection>
+    <url>https://github.com/checkstyle/checkstyle-files-generator</url>
   </scm>
 
   <properties>
@@ -40,7 +39,7 @@
     <java.version>21</java.version>
     <maven.compiler.source>${java.version}</maven.compiler.source>
     <maven.compiler.target>${java.version}</maven.compiler.target>
-    <checkstyle.version>13.10.0</checkstyle.version>
+    <checkstyle.version>13.11.0</checkstyle.version>
     <doxia.version>1.12.0</doxia.version>
   </properties>
 
