@@ -33,9 +33,22 @@ thin jar directly, because the command requires Checkstyle's build classes and d
 
 ## Releases
 
-To publish a release, first set the release version in `pom.xml` and commit it to
-`main`. Then manually run the **Release Deploy Maven Central** workflow. It checks out
-`main` and deploys signed binary, source, and Javadoc artifacts to Maven Central.
+This repository follows the same Maven release approach as the main Checkstyle repository, using
+separate **prepare** and **perform** steps.
 
-The workflow does not change the version, create commits or tags, or create a GitHub
-Release. It requires the Maven Central and GPG secrets configured for the repository.
+Development versions on `main` use the `-SNAPSHOT` suffix. If the next planned release version
+needs to change, run the **Bump Version** workflow first. It updates the project to the requested
+`*-SNAPSHOT` version and commits the change.
+
+To publish a release, manually run the **Release** workflow with the desired version, without
+the `-SNAPSHOT` suffix. The release process:
+
+* runs Maven `release:prepare`, which changes the POM to the release version, creates the release
+  commit and Git tag, then advances `main` to the next development `-SNAPSHOT` version;
+* pushes the release commits and tag to GitHub;
+* runs Maven `release:perform` from the prepared release state;
+* rebuilds the project from the release tag and publishes signed binary, source, and Javadoc
+  artifacts to Maven Central.
+
+The workflow does not create a GitHub Release. Publishing requires the Maven Central and GPG
+secrets configured for the repository.
