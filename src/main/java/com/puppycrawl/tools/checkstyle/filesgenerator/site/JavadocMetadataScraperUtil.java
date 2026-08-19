@@ -59,11 +59,17 @@ public final class JavadocMetadataScraperUtil {
             if (isContentToWrite(curNode)) {
                 String childText = curNode.getText();
 
-                if (isInsideCodeInlineTag(curNode)) {
+                if (isInsideSnippetAttributes(curNode)) {
+                    childText = "";
+                }
+                else if (isInsideCodeInlineTag(curNode)) {
                     childText = adjustCodeInlineTagChildToHtml(curNode);
                 }
                 else if (isInsideLiteralInlineTag(curNode)) {
                     childText = adjustLiteralInlineTagChildToText(curNode);
+                }
+                else if (isInsideSnippetInlineTag(curNode) || isInsideSnippetBody(curNode)) {
+                    childText = adjustSnippetInlineTagChildToHtml(curNode);
                 }
 
                 result.append(childText);
@@ -103,6 +109,53 @@ public final class JavadocMetadataScraperUtil {
     }
 
     /**
+     * Checks whether the given node is a direct child of a {@code @snippet} Javadoc
+     * inline tag (for instance its start/end markers, colon, or body wrapper).
+     *
+     * @param node the node to check
+     * @return true if the node is a direct child of a {@code @snippet} inline tag,
+     *         false otherwise
+     */
+    private static boolean isInsideSnippetInlineTag(DetailNode node) {
+        return node.getParent() != null
+                && node.getParent().getType() == JavadocCommentsTokenTypes.SNIPPET_INLINE_TAG;
+    }
+
+    /**
+     * Checks whether the given node is inside the body of a {@code @snippet} Javadoc
+     * inline tag, i.e. is part of the actual snippet content to be rendered as code.
+     *
+     * @param node the node to check
+     * @return true if the node is a direct child of {@code SNIPPET_BODY}, false otherwise
+     */
+    private static boolean isInsideSnippetBody(DetailNode node) {
+        return node.getParent() != null
+                && node.getParent().getType() == JavadocCommentsTokenTypes.SNIPPET_BODY;
+    }
+
+    /**
+     * Checks whether the given node is, or is nested inside, the attributes
+     * (for example {@code lang="java"}) of a {@code @snippet} Javadoc inline tag.
+     * Attribute content is not rendered in the generated description.
+     *
+     * @param node the node to check
+     * @return true if the node is the {@code SNIPPET_ATTRIBUTES} node or a descendant
+     *         of it, false otherwise
+     */
+    private static boolean isInsideSnippetAttributes(DetailNode node) {
+        boolean result = node.getType() == JavadocCommentsTokenTypes.SNIPPET_ATTRIBUTES;
+        DetailNode ancestor = node.getParent();
+
+        while (!result && ancestor != null
+                && ancestor.getType() != JavadocCommentsTokenTypes.SNIPPET_INLINE_TAG) {
+            result = ancestor.getType() == JavadocCommentsTokenTypes.SNIPPET_ATTRIBUTES;
+            ancestor = ancestor.getParent();
+        }
+
+        return result;
+    }
+
+    /**
      * Checks whether selected Javadoc node is considered as something to write.
      *
      * @param detailNode javadoc node to check.
@@ -128,6 +181,29 @@ public final class JavadocMetadataScraperUtil {
             case JavadocCommentsTokenTypes.TAG_NAME -> "";
             case JavadocCommentsTokenTypes.JAVADOC_INLINE_TAG_START -> "<code>";
             default -> escapeXmlChars(codeChild.getText().trim());
+        };
+    }
+
+    /**
+     * Adjusts a child of a {@code @snippet} Javadoc inline tag to its analogous html
+     * format, rendering the snippet body as a highlighted code block. Snippet attributes
+     * (such as {@code lang="java"}) are handled separately via
+     * {@link #isInsideSnippetAttributes(DetailNode)} and are not passed here.
+     *
+     * @param snippetChild {@code @snippet} child to convert.
+     * @return converted {@code @snippet} child element, otherwise just the original text.
+     */
+    public static String adjustSnippetInlineTagChildToHtml(DetailNode snippetChild) {
+
+        return switch (snippetChild.getType()) {
+            case JavadocCommentsTokenTypes.JAVADOC_INLINE_TAG_START ->
+                    "<pre class=\"prettyprint\"><code>";
+            case JavadocCommentsTokenTypes.JAVADOC_INLINE_TAG_END -> "</code></pre>";
+            case JavadocCommentsTokenTypes.COLON,
+                 JavadocCommentsTokenTypes.TAG_NAME,
+                 JavadocCommentsTokenTypes.SNIPPET_BODY -> "";
+            case JavadocCommentsTokenTypes.NEWLINE -> snippetChild.getText();
+            default -> escapeXmlChars(snippetChild.getText());
         };
     }
 
