@@ -102,9 +102,9 @@ public final class SiteUtil {
     /** The path to the TokenTypes.html file. */
     public static final String PATH_TO_TOKEN_TYPES =
             "apidocs/com/puppycrawl/tools/checkstyle/api/TokenTypes.html";
-    /** The path to the JavadocTokenTypes.html file. */
+    /** The path to the JavadocCommentsTokenTypes.html file. */
     public static final String PATH_TO_JAVADOC_TOKEN_TYPES =
-            "apidocs/com/puppycrawl/tools/checkstyle/api/JavadocTokenTypes.html";
+            "apidocs/com/puppycrawl/tools/checkstyle/api/JavadocCommentsTokenTypes.html";
     /** The string of JavaDoc module marking 'Since version'. */
     public static final String SINCE_VERSION = "Since version";
     /** The 'Check' pattern at the end of string. */
