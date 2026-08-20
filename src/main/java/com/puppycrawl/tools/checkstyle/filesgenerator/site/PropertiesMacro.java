@@ -307,31 +307,29 @@ public class PropertiesMacro extends AbstractMacro {
             writeTokensList(sink, details.getConfigurableTokens(),
                     SiteUtil.PATH_TO_JAVADOC_TOKEN_TYPES, true);
         }
+        else if (tokenPropertyType == PropertyDetails.TokenPropertyType.CUSTOM_TOKEN_SUBSET) {
+            processLinkForTokenTypes(sink);
+        }
         else {
             final String type = details.getType();
 
-            if (type != null && type.startsWith(SUBSET_OF_TOKENS)) {
-                processLinkForTokenTypes(sink);
+            final String relativePathToPropertyTypes =
+                    SiteUtil.getLinkToDocument(currentModuleName, PROPERTY_TYPES_XML);
+            final String escapedType;
+            if (type == null) {
+                escapedType = "";
             }
             else {
-                final String relativePathToPropertyTypes =
-                        SiteUtil.getLinkToDocument(currentModuleName, PROPERTY_TYPES_XML);
-                final String escapedType;
-                if (type == null) {
-                    escapedType = "";
-                }
-                else {
-                    escapedType = type.replace("[", ".5B")
-                            .replace("]", ".5D");
-                }
-
-                final String url =
-                        String.format(Locale.ROOT, URL_F, relativePathToPropertyTypes, escapedType);
-
-                sink.link(url);
-                sink.text(Objects.requireNonNullElse(type, ""));
-                sink.link_();
+                escapedType = type.replace("[", ".5B")
+                        .replace("]", ".5D");
             }
+
+            final String url =
+                    String.format(Locale.ROOT, URL_F, relativePathToPropertyTypes, escapedType);
+
+            sink.link(url);
+            sink.text(Objects.requireNonNullElse(type, ""));
+            sink.link_();
         }
         sink.tableCell_();
     }

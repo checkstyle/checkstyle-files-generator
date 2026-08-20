@@ -45,6 +45,12 @@ public final class PropertyDetails {
         TOKEN_SUBSET,
         /** {@code javadocTokens} property with a configurable subset of JavadocTokenTypes. */
         JAVADOC_TOKEN_SUBSET,
+        /**
+         * Custom {@code @XdocsPropertyType(PropertyType.TOKEN_ARRAY)} field (e.g.
+         * {@code limitedTokens}) with no {@code getAcceptableTokens()}/{@code getRequiredTokens()}
+         * API to compute a real subset — documented as accepting any {@code TokenTypes} constant.
+         */
+        CUSTOM_TOKEN_SUBSET,
     }
 
     /** The property name. */
