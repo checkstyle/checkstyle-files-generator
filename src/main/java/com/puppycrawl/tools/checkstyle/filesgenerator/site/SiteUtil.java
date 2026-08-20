@@ -778,15 +778,14 @@ public final class SiteUtil {
                                                       String propertyName, String moduleName)
             throws MacroExecutionException {
         final Class<?> fieldClass = getFieldClass(field, propertyName, moduleName, instance);
-        final String type;
         if (ModuleJavadocParsingUtil.isPropertySpecialTokenProp(field)) {
-            type = "subset of tokens TokenTypes";
+            builder.tokenPropertyType(PropertyDetails.TokenPropertyType.CUSTOM_TOKEN_SUBSET);
         }
         else {
             final String rawType = getType(field, propertyName, moduleName, instance);
-            type = simplifyTypeName(rawType);
+            final String type = simplifyTypeName(rawType);
+            builder.type(type);
         }
-        builder.type(type);
 
         String defaultValue;
         if (field != null) {
