@@ -197,8 +197,8 @@ public final class JavadocMetadataScraperUtil {
 
         return switch (snippetChild.getType()) {
             case JavadocCommentsTokenTypes.JAVADOC_INLINE_TAG_START ->
-                    "<pre class=\"prettyprint\"><code>";
-            case JavadocCommentsTokenTypes.JAVADOC_INLINE_TAG_END -> "</code></pre>";
+                    "<div class=\"wrapper\"><pre class=\"prettyprint\"><code>";
+            case JavadocCommentsTokenTypes.JAVADOC_INLINE_TAG_END -> "</code></pre></div>";
             case JavadocCommentsTokenTypes.COLON,
                  JavadocCommentsTokenTypes.TAG_NAME,
                  JavadocCommentsTokenTypes.SNIPPET_BODY -> "";
