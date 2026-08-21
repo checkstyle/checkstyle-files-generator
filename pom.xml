@@ -4,7 +4,7 @@
 
   <groupId>com.puppycrawl.tools</groupId>
   <artifactId>checkstyle-files-generator</artifactId>
-  <version>1.0.2</version>
+  <version>1.0.3-SNAPSHOT</version>
   <packaging>jar</packaging>
 
   <name>checkstyle-files-generator</name>
@@ -31,7 +31,7 @@
       scm:git:https://github.com/checkstyle/checkstyle-files-generator.git
     </developerConnection>
     <url>https://github.com/checkstyle/checkstyle-files-generator</url>
-    <tag>checkstyle-files-generator-1.0.2</tag>
+    <tag>HEAD</tag>
   </scm>
 
   <properties>
