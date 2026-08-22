@@ -6,14 +6,15 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Stream;
 
+import org.apache.maven.doxia.macro.Macro;
 import org.apache.maven.doxia.parser.Parser;
 import org.apache.maven.doxia.sink.Sink;
 import org.apache.maven.doxia.sink.SinkFactory;
 import org.codehaus.plexus.DefaultPlexusContainer;
 import org.codehaus.plexus.PlexusContainer;
-import org.codehaus.plexus.util.ReaderFactory;
 
 /** Generates XDoc files from Checkstyle's XDoc templates. */
 public final class XdocGenerator {
@@ -48,10 +49,15 @@ public final class XdocGenerator {
         try {
             final XdocsTemplateSinkFactory sinkFactory =
                     (XdocsTemplateSinkFactory) plexus.lookup(
-                            SinkFactory.ROLE, XDOCS_TEMPLATE_HINT);
+                            SinkFactory.class, XDOCS_TEMPLATE_HINT);
             final XdocsTemplateParser parser = (XdocsTemplateParser) plexus.lookup(
-                    Parser.ROLE, XDOCS_TEMPLATE_HINT);
+                            Parser.class, XDOCS_TEMPLATE_HINT);
             parser.setCheckstyleRoot(root);
+
+            // Initialize macros for the parser's MacroManager
+            final Map<String, Macro> macros =
+                    plexus.lookupMap(Macro.class);
+            parser.setMacros(macros);
 
             for (Path template : templates) {
                 generate(template, sinkFactory, parser);
@@ -71,19 +77,24 @@ public final class XdocGenerator {
         final Sink sink = sinkFactory.createSink(temporary.getParent().toFile(),
                 temporary.getFileName().toString(), StandardCharsets.UTF_8.name());
 
+        Reader reader = null;
         try {
-            try (Reader reader = ReaderFactory.newReader(template.toFile(),
-                    StandardCharsets.UTF_8.name())) {
-                parser.parse(reader, sink);
+            reader = Files.newBufferedReader(template, StandardCharsets.UTF_8);
+            parser.parse(reader, sink);
+            if (sink instanceof XdocsTemplateSink xdocsTemplateSink) {
+                xdocsTemplateSink.finish();
             }
-            finally {
-                sink.close();
-            }
+            sink.close();
             Files.move(temporary, output, StandardCopyOption.REPLACE_EXISTING);
         }
         catch (Exception exception) {
             Files.deleteIfExists(temporary);
             throw new IllegalStateException("Exception while handling " + template, exception);
+        }
+        finally {
+            if (reader != null) {
+                reader.close();
+            }
         }
     }
 }

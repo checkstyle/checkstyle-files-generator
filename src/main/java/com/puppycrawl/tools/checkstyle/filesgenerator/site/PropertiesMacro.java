@@ -19,6 +19,9 @@
 
 package com.puppycrawl.tools.checkstyle.filesgenerator.site;
 
+import java.lang.reflect.Field;
+import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.Proxy;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
@@ -42,6 +45,10 @@ import com.puppycrawl.tools.checkstyle.utils.CommonUtil;
  */
 @Component(role = Macro.class, hint = "properties")
 public class PropertiesMacro extends AbstractMacro {
+
+    /** EventCapturingSinkProxy class name. */
+    private static final String EVENT_CAPTURING_SINK_PROXY =
+            "org.apache.maven.doxia.sink.impl.EventCapturingSinkProxy";
 
     /**
      * Constant value for cases when tokens set is empty.
@@ -90,15 +97,30 @@ public class PropertiesMacro extends AbstractMacro {
 
     @Override
     public void execute(Sink sink, MacroRequest request) throws MacroExecutionException {
-        // until https://github.com/checkstyle/checkstyle/issues/13426
-        if (!(sink instanceof XdocSink xdocSink)) {
-            throw new MacroExecutionException("Expected Sink to be an XdocSink.");
+        Object unwrappedSink = sink;
+        if (sink.getClass().getName().contains("Proxy")) {
+            try {
+                InvocationHandler handler = Proxy.getInvocationHandler(sink);
+                if (handler.getClass().getName().equals(EVENT_CAPTURING_SINK_PROXY)) {
+                    Field sinkField = handler.getClass().getDeclaredField("sink");
+                    sinkField.setAccessible(true);
+                    unwrappedSink = sinkField.get(handler);
+                }
+            }
+            catch (Exception ex) {
+                // Fall through to original sink if unwrapping fails
+            }
+        }
+
+        if (!(unwrappedSink instanceof XdocSink) && !(unwrappedSink instanceof XdocsTemplateSink)) {
+            throw new MacroExecutionException("Expected Sink to be an XdocSink or XdocsTemplateSink, but got: " + unwrappedSink.getClass().getName());
         }
 
         final String modulePath = (String) request.getParameter("modulePath");
 
         configureGlobalProperties(modulePath);
 
+        final XdocSink xdocSink = (XdocSink) unwrappedSink;
         writePropertiesTable(xdocSink);
     }
 
@@ -259,9 +281,9 @@ public class PropertiesMacro extends AbstractMacro {
         sink.rawText(ModuleJavadocParsingUtil.INDENT_LEVEL_14);
         sink.tableCell();
         sink.rawText("<a id=\"" + propertyName + "\"/>");
-        sink.link(HASHTAG + propertyName);
+        sink.rawText("<a href=\"" + escapeXml(HASHTAG + propertyName) + "\">");
         sink.text(propertyName);
-        sink.link_();
+        sink.rawText("</a>");
         sink.tableCell_();
     }
 
@@ -327,9 +349,9 @@ public class PropertiesMacro extends AbstractMacro {
             final String url =
                     String.format(Locale.ROOT, URL_F, relativePathToPropertyTypes, escapedType);
 
-            sink.link(url);
+            sink.rawText("<a href=\"" + escapeXml(url) + "\">");
             sink.text(Objects.requireNonNullElse(type, ""));
-            sink.link_();
+            sink.rawText("</a>");
         }
         sink.tableCell_();
     }
@@ -346,9 +368,9 @@ public class PropertiesMacro extends AbstractMacro {
                 SiteUtil.getLinkToDocument(currentModuleName, SiteUtil.PATH_TO_TOKEN_TYPES);
 
         sink.text("subset of tokens ");
-        sink.link(link);
+        sink.rawText("<a href=\"" + escapeXml(link) + "\">");
         sink.text("TokenTypes");
-        sink.link_();
+        sink.rawText("</a>");
     }
 
     /**
@@ -362,10 +384,10 @@ public class PropertiesMacro extends AbstractMacro {
         sink.rawText(ModuleJavadocParsingUtil.INDENT_LEVEL_16);
         final String link =
                 SiteUtil.getLinkToDocument(currentModuleName, SiteUtil.PATH_TO_TOKEN_TYPES);
-        sink.link(link);
+        sink.rawText("<a href=\"" + escapeXml(link) + "\">");
         sink.rawText(ModuleJavadocParsingUtil.INDENT_LEVEL_20);
         sink.text(SiteUtil.TOKENS);
-        sink.link_();
+        sink.rawText("</a>");
         sink.rawText(ModuleJavadocParsingUtil.INDENT_LEVEL_14);
     }
 
@@ -416,10 +438,10 @@ public class PropertiesMacro extends AbstractMacro {
             throws MacroExecutionException {
         final String link = SiteUtil.getLinkToDocument(currentModuleName, document)
                 + HASHTAG + tokenName;
-        sink.link(link);
+        sink.rawText("<a href=\"" + escapeXml(link) + "\">");
         sink.rawText(ModuleJavadocParsingUtil.INDENT_LEVEL_20);
         sink.text(tokenName);
-        sink.link_();
+        sink.rawText("</a>");
     }
 
     /**
@@ -548,6 +570,19 @@ public class PropertiesMacro extends AbstractMacro {
         sink.tableCell();
         sink.text(sinceVersion);
         sink.tableCell_();
+    }
+
+    /**
+     * Escapes XML special characters in a string.
+     *
+     * @param value the string to escape.
+     * @return the escaped string.
+     */
+    private static String escapeXml(String value) {
+        return value.replace("&", "&amp;")
+                .replace("<", "&lt;")
+                .replace(">", "&gt;")
+                .replace("\"", "&quot;");
     }
 
 }
