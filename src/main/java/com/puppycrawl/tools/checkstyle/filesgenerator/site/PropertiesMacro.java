@@ -525,7 +525,7 @@ public class PropertiesMacro extends AbstractMacro {
         final String result;
         if (SiteUtil.FILE_EXTENSIONS.equals(propertyName)
                 && (rawDefault.isEmpty() || CURLY_BRACKET.equals(rawDefault))) {
-            result = "all files";
+            result = "all supported files";
         }
         else if (SiteUtil.CHARSET.equals(propertyName)) {
             result = "the charset property of the parent"
