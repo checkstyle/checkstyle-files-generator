@@ -27,4 +27,4 @@ jobs:
           cache: maven
 
       - name: Run verification
-        run: ./.ci/verify.sh
+        run: ./.ci/jobs.sh verify

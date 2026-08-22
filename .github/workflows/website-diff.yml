@@ -1,0 +1,49 @@
+#####################################################################################
+# GitHub Action to detect website file changes when checkstyle-files-generator changes.
+#
+# Workflow starts when:
+# 1) pull_request - opened, synchronize, reopened in checkstyle-files-generator
+#
+# This workflow detects if changes to checkstyle-files-generator would cause
+# changes to generated xdoc files in the checkstyle repository, failing CI if
+# unintended modifications are detected.
+#####################################################################################
+name: Website-Diff
+
+on:
+  pull_request:
+    types: [ opened, synchronize, reopened ]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  website-diff:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout checkstyle-files-generator
+        uses: actions/checkout@v7
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - name: Build checkstyle-files-generator
+        run: |
+          ./.ci/jobs.sh clean-install-skip-tests
+
+      - name: Checkout checkstyle repository
+        uses: actions/checkout@v7
+        with:
+          repository: checkstyle/checkstyle
+          path: .ci-temp
+
+      - name: Check for xdoc changes
+        run: |
+          ./.ci/website-diff.sh
