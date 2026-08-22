@@ -1,0 +1,163 @@
+#####################################################################################
+# GitHub Action to detect website file changes when checkstyle-files-generator changes.
+#
+# Workflow starts when:
+# 1) pull_request - opened, synchronize, reopened in checkstyle-files-generator
+#
+# This workflow detects if changes to checkstyle-files-generator would cause
+# changes to generated xdoc files in the checkstyle repository, alerting developers
+# to potential documentation generation impacts.
+#####################################################################################
+name: Website-Diff
+
+on:
+  pull_request:
+    types: [ opened, synchronize, reopened ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  website-diff:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout checkstyle-files-generator
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - name: Build checkstyle-files-generator
+        run: |
+          ./mvnw clean install -DskipTests
+
+      - name: Checkout checkstyle repository
+        uses: actions/checkout@v7
+        with:
+          repository: checkstyle/checkstyle
+          path: checkstyle
+          fetch-depth: 0
+
+      - name: Fetch checkstyle origin/master
+        run: |
+          cd checkstyle
+          git fetch origin master
+
+      - name: Generate xdoc files with current version
+        id: generate_current
+        run: |
+          cd checkstyle
+          # Generate xdoc files with current published version
+          mvn clean verify -DskipTests -Dcheckstyle.skip=true -Dpmd.skip=true -Dspotbugs.skip=true
+          
+          # Save current xdoc files
+          mkdir -p ../xdoc-current
+          find src/site/xdoc -name "*.xml" -exec cp --parents {} ../xdoc-current/ \;
+
+      - name: Generate xdoc files with new version
+        id: generate_new
+        run: |
+          cd checkstyle
+          # Clean previous build
+          mvn clean
+
+          # Install local version of checkstyle-files-generator
+          cd ..
+          ./mvnw clean install -DskipTests
+
+          # Get the actual checkstyle-files-generator version
+          GENERATOR_VERSION=$(./mvnw help:evaluate -Dexpression=project.version -q -DforceStdout)
+
+          # Modify checkstyle pom.xml to use local version
+          cd checkstyle
+          sed -i "s|<checkstyle-files-generator.version>.*</checkstyle-files-generator.version>|<checkstyle-files-generator.version>${GENERATOR_VERSION}</checkstyle-files-generator.version>|" pom.xml
+
+          # Generate xdoc files with new version
+          mvn verify -DskipTests -Dcheckstyle.skip=true -Dpmd.skip=true -Dspotbugs.skip=true
+
+          # Save new xdoc files
+          mkdir -p ../xdoc-new
+          find src/site/xdoc -name "*.xml" -exec cp --parents {} ../xdoc-new/ \;
+
+      - name: Compare xdoc files
+        id: compare
+        run: |
+          if [ -d "xdoc-current" ] && [ -d "xdoc-new" ]; then
+            diff -rq xdoc-current xdoc-new > /dev/null 2>&1
+            if [ $? -ne 0 ]; then
+              echo "has_changes=true" >> "$GITHUB_OUTPUT"
+              echo "XDoc files changed."
+
+              # Create detailed diff
+              mkdir -p .ci-temp
+              {
+                echo "## Website File Change Detection"
+                echo ""
+                echo "Changes to checkstyle-files-generator would affect generated xdoc files."
+                echo ""
+                echo "### Modified files:"
+                echo ""
+                diff -rq xdoc-current xdoc-new | sed 's/Files \(.*\) and \(.*\) differ/- \2/' || true
+                echo ""
+                echo "### Instructions"
+                echo ""
+                echo "- Review the xdoc file changes to ensure they are intentional."
+                echo "- If changes are expected, proceed with the PR."
+                echo "- If changes are unexpected, investigate the generator logic."
+              } > .ci-temp/diff-message.md
+            else
+              echo "has_changes=false" >> "$GITHUB_OUTPUT"
+              echo "No xdoc file changes detected."
+            fi
+          else
+            echo "has_changes=false" >> "$GITHUB_OUTPUT"
+            echo "Could not compare xdoc files."
+          fi
+
+      - name: Comment PR with results
+        if: steps.compare.outputs.has_changes == 'true'
+        uses: actions/github-script@v9
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const fs = require('fs');
+            const message = fs.readFileSync('.ci-temp/diff-message.md', 'utf8');
+
+            // Find existing comment by this workflow
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+
+            const botComment = comments.find(comment =>
+              comment.user.type === 'Bot' &&
+              comment.body.includes('Website File Change Detection')
+            );
+
+            if (botComment) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: botComment.id,
+                body: message
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: message
+              });
+            }
