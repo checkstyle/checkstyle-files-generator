@@ -13,7 +13,7 @@ fi
 TARGET_VERSION=$1
 echo TARGET_VERSION="$TARGET_VERSION"
 
-POM_VERSION=$(getCheckstylePomVersion)
+POM_VERSION=$(getPomVersion)
 
 if [[ "$POM_VERSION" != *-SNAPSHOT ]]; then
   echo "[ERROR] Current POM version must be a SNAPSHOT: $POM_VERSION"

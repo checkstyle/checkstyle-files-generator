@@ -25,10 +25,10 @@ function getMavenProperty() {
     -DforceStdout
 }
 
-function getCheckstylePomVersion {
+function getPomVersion {
   getMavenProperty project.version
 }
 
-function getCheckstylePomVersionWithoutSnapshot {
-  getCheckstylePomVersion | sed "s/-SNAPSHOT//"
+function getPomVersionWithoutSnapshot {
+  getPomVersion | sed "s/-SNAPSHOT//"
 }
