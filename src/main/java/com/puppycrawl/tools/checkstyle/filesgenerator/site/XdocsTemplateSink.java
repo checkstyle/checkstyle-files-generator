@@ -19,15 +19,13 @@
 
 package com.puppycrawl.tools.checkstyle.filesgenerator.site;
 
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.Writer;
 import java.util.regex.Pattern;
 
-import javax.swing.text.MutableAttributeSet;
-
 import org.apache.maven.doxia.module.xdoc.XdocSink;
 import org.apache.maven.doxia.sink.SinkEventAttributes;
-import org.apache.maven.doxia.sink.impl.SinkEventAttributeSet;
 
 /**
  * A sink for Checkstyle's xdoc templates.
@@ -38,9 +36,6 @@ import org.apache.maven.doxia.sink.impl.SinkEventAttributeSet;
  */
 public class XdocsTemplateSink extends XdocSink {
 
-    /** Encoding of the writer. */
-    private final String encoding;
-
     /**
      * Create a new instance, initialize the Writer.
      *
@@ -49,62 +44,207 @@ public class XdocsTemplateSink extends XdocSink {
      */
     public XdocsTemplateSink(Writer writer, String encoding) {
         super(new CustomPrintWriter(writer));
-        this.encoding = encoding;
+
+        try {
+            writer.write("<?xml version=\"1.0\" encoding=\"" + encoding + "\"?>");
+            writer.write("\n");
+        }
+        catch (IOException ex) {
+            throw new IllegalStateException("Failed to write XML declaration", ex);
+        }
     }
 
     /**
-     * Place the XML declaration at the top of the file.
+     * Override init() to prevent automatic body tag generation.
+     * XML declaration is written in the constructor instead.
      */
     @Override
-    public void body() {
-        write("<?xml version=\"1.0\" encoding=\"" + encoding + "\"?>");
-        writeEOL();
+    protected void init() {
+        // no-op: XML declaration is written once in the constructor instead
     }
 
     /**
-     * Place a newline at the end of the file, flush the writer, and reset the sink.
+     * Override body_() to handle cleanup.
      */
     @Override
     public void body_() {
         writeEOL();
         flush();
-        init();
     }
 
     /**
-     * Write an external link. We override this method because the default implementation
-     * adds a {@code class="external-link"} attribute to the link which we don't want.
+     * Finish the document by writing a trailing newline and flushing.
+     * Must be called explicitly since body_() is no longer invoked
+     * (it's final in Doxia 2.1.0 and synthesizes unwanted output).
+     */
+    public void finish() {
+        writeEOL();
+        flush();
+    }
+
+    /**
+     * Override paragraph to write <p> tag without automatic newline insertion.
+     * This allows precise control over formatting in the generated XML.
      *
-     * @param href the link.
+     * @param attributes the attributes (ignored)
      */
     @Override
-    public void link(String href) {
-        final MutableAttributeSet attributes = new SinkEventAttributeSet();
-        attributes.addAttribute(SinkEventAttributes.HREF, href);
-        writeStartTag(A, attributes);
+    public void paragraph(SinkEventAttributes attributes) {
+        write("<p>");
     }
 
     /**
-     * Write a table row tag. We override this method because the default implementation
-     * adds a {@code align="top"} attribute to the row which we don't want.
+     * Override paragraph_ to write </p> tag without automatic newline insertion.
      */
     @Override
-    public void tableRow() {
-        writeStartTag(TR);
+    public void paragraph_() {
+        write("</p>");
     }
 
     /**
-     * Write a table tag. We override this method because the default implementation
-     * adds different attributes which we don't want. We ignore the parameters
-     * because we don't need them, but the default implementation will take them
-     * into account once this class is removed.
+     * Override table to write <table> tag without automatic attributes or newlines.
      *
-     * @param justification ignored
-     * @param grid ignored
+     * @param attributes the attributes (ignored)
+     */
+    @Override
+    public void table(SinkEventAttributes attributes) {
+        write("<table>");
+    }
+
+    /**
+     * Override table_ to write </table> tag without automatic newline insertion.
+     */
+    @Override
+    public void table_() {
+        write("</table>");
+    }
+
+    /**
+     * Override tableRows to write without automatic attributes or newlines.
+     *
+     * @param justification the justification array (ignored)
+     * @param grid the grid flag (ignored)
      */
     @Override
     public void tableRows(int[] justification, boolean grid) {
-        writeStartTag(TABLE);
+        // no-op: tableRows is not used in our table structure
+    }
+
+    /**
+     * Override tableRows_ to be a no-op.
+     */
+    @Override
+    public void tableRows_() {
+        // no-op: tableRows_ is not used in our table structure
+    }
+
+    /**
+     * Override tableRow to write <tr> tag without automatic newline insertion.
+     *
+     * @param attributes the attributes (ignored)
+     */
+    @Override
+    public void tableRow(SinkEventAttributes attributes) {
+        write("<tr>");
+    }
+
+    /**
+     * Override tableRow_ to write </tr> tag without automatic newline insertion.
+     */
+    @Override
+    public void tableRow_() {
+        write("</tr>");
+    }
+
+    /**
+     * Override tableCell to write <td> tag without automatic newline insertion.
+     *
+     * @param attributes the attributes (ignored)
+     */
+    @Override
+    public void tableCell(SinkEventAttributes attributes) {
+        write("<td>");
+    }
+
+    /**
+     * Override tableCell_ to write </td> tag without automatic newline insertion.
+     */
+    @Override
+    public void tableCell_() {
+        write("</td>");
+    }
+
+    /**
+     * Override tableHeaderCell to write <th> tag without automatic newline insertion.
+     *
+     * @param attributes the attributes (ignored)
+     */
+    @Override
+    public void tableHeaderCell(SinkEventAttributes attributes) {
+        write("<th>");
+    }
+
+    /**
+     * Override tableHeaderCell_ to write </th> tag without automatic newline insertion.
+     */
+    @Override
+    public void tableHeaderCell_() {
+        write("</th>");
+    }
+
+    /**
+     * Override list to write <ul> tag without automatic newline insertion.
+     *
+     * @param attributes the attributes (ignored)
+     */
+    @Override
+    public void list(SinkEventAttributes attributes) {
+        write("<ul>");
+    }
+
+    /**
+     * Override list_ to write </ul> tag without automatic newline insertion.
+     */
+    @Override
+    public void list_() {
+        write("</ul>");
+    }
+
+    /**
+     * Override listItem to write <li> tag without automatic newline insertion.
+     *
+     * @param attributes the attributes (ignored)
+     */
+    @Override
+    public void listItem(SinkEventAttributes attributes) {
+        write("<li>");
+    }
+
+    /**
+     * Override listItem_ to write </li> tag without automatic newline insertion.
+     */
+    @Override
+    public void listItem_() {
+        write("</li>");
+    }
+
+    /**
+     * Override link to write <a> tag without automatic externalLink class.
+     *
+     * @param href the href attribute
+     * @param attributes the attributes (ignored)
+     */
+    @Override
+    public void link(String href, SinkEventAttributes attributes) {
+        write("<a href=\"" + href + "\">");
+    }
+
+    /**
+     * Override link_ to write </a> tag without automatic newline insertion.
+     */
+    @Override
+    public void link_() {
+        write("</a>");
     }
 
     /**
@@ -124,7 +264,7 @@ public class XdocsTemplateSink extends XdocSink {
          * @param writer not null writer to write the result
          */
         private CustomPrintWriter(Writer writer) {
-            super(writer);
+            super(writer, false);
         }
 
         /**
