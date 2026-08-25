@@ -26,7 +26,6 @@ import org.apache.maven.doxia.macro.AbstractMacro;
 import org.apache.maven.doxia.macro.Macro;
 import org.apache.maven.doxia.macro.MacroExecutionException;
 import org.apache.maven.doxia.macro.MacroRequest;
-import org.apache.maven.doxia.module.xdoc.XdocSink;
 import org.apache.maven.doxia.sink.Sink;
 import org.codehaus.plexus.component.annotations.Component;
 
@@ -45,14 +44,10 @@ public class ParentModuleMacro extends AbstractMacro {
 
     @Override
     public void execute(Sink sink, MacroRequest request) throws MacroExecutionException {
-        // until https://github.com/checkstyle/checkstyle/issues/13426
-        if (!(sink instanceof XdocSink xdocSink)) {
-            throw new MacroExecutionException("Expected Sink to be an XdocSink.");
-        }
         final String moduleName = (String) request.getParameter("moduleName");
         final Object instance = SiteUtil.getModuleInstance(moduleName);
         final Class<?> clss = instance.getClass();
-        createParentModuleParagraph(xdocSink, clss, moduleName);
+        createParentModuleParagraph(sink, clss, moduleName);
     }
 
     /**
@@ -63,16 +58,14 @@ public class ParentModuleMacro extends AbstractMacro {
      * @param moduleName the module name.
      * @throws MacroExecutionException if the parent module cannot be found.
      */
-    private static void createParentModuleParagraph(XdocSink sink, Class<?> clss, String moduleName)
+    private static void createParentModuleParagraph(Sink sink, Class<?> clss, String moduleName)
             throws MacroExecutionException {
         final String parentModule = SiteUtil.getParentModule(clss);
         final String linkToParentModule = getLinkToParentModule(parentModule, moduleName);
 
-        sink.setInsertNewline(false);
-        sink.paragraph();
-        sink.setInsertNewline(true);
+        sink.paragraph(null);
         sink.rawText(ModuleJavadocParsingUtil.INDENT_LEVEL_10);
-        sink.link(linkToParentModule);
+        sink.link(linkToParentModule, null);
         sink.text(parentModule);
         sink.link_();
         sink.rawText(ModuleJavadocParsingUtil.INDENT_LEVEL_8);

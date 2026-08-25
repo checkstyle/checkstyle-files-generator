@@ -31,7 +31,6 @@ import org.apache.maven.doxia.macro.AbstractMacro;
 import org.apache.maven.doxia.macro.Macro;
 import org.apache.maven.doxia.macro.MacroExecutionException;
 import org.apache.maven.doxia.macro.MacroRequest;
-import org.apache.maven.doxia.module.xdoc.XdocSink;
 import org.apache.maven.doxia.sink.Sink;
 import org.codehaus.plexus.component.annotations.Component;
 
@@ -90,16 +89,11 @@ public class PropertiesMacro extends AbstractMacro {
 
     @Override
     public void execute(Sink sink, MacroRequest request) throws MacroExecutionException {
-        // until https://github.com/checkstyle/checkstyle/issues/13426
-        if (!(sink instanceof XdocSink xdocSink)) {
-            throw new MacroExecutionException("Expected Sink to be an XdocSink.");
-        }
-
         final String modulePath = (String) request.getParameter("modulePath");
 
         configureGlobalProperties(modulePath);
 
-        writePropertiesTable(xdocSink);
+        writePropertiesTable(sink);
     }
 
     /**
@@ -131,18 +125,14 @@ public class PropertiesMacro extends AbstractMacro {
      * @param sink the sink to write to.
      * @throws MacroExecutionException if an error occurs during writing.
      */
-    private static void writePropertiesTable(XdocSink sink)
+    private static void writePropertiesTable(Sink sink)
             throws MacroExecutionException {
-        sink.table();
-        sink.setInsertNewline(false);
-        sink.tableRows(null, false);
+        sink.table(null);
         sink.rawText(ModuleJavadocParsingUtil.INDENT_LEVEL_12);
         writeTableHeaderRow(sink);
         writeTablePropertiesRows(sink);
         sink.rawText(ModuleJavadocParsingUtil.INDENT_LEVEL_10);
-        sink.tableRows_();
         sink.table_();
-        sink.setInsertNewline(true);
     }
 
     /**
@@ -151,11 +141,16 @@ public class PropertiesMacro extends AbstractMacro {
      * @param sink sink to write to.
      */
     private static void writeTableHeaderRow(Sink sink) {
-        sink.tableRow();
+        sink.tableRow(null);
+        sink.rawText(ModuleJavadocParsingUtil.INDENT_LEVEL_14);
         writeTableHeaderCell(sink, "name");
+        sink.rawText(ModuleJavadocParsingUtil.INDENT_LEVEL_14);
         writeTableHeaderCell(sink, "description");
+        sink.rawText(ModuleJavadocParsingUtil.INDENT_LEVEL_14);
         writeTableHeaderCell(sink, "type");
+        sink.rawText(ModuleJavadocParsingUtil.INDENT_LEVEL_14);
         writeTableHeaderCell(sink, "default value");
+        sink.rawText(ModuleJavadocParsingUtil.INDENT_LEVEL_14);
         writeTableHeaderCell(sink, "since");
         sink.rawText(ModuleJavadocParsingUtil.INDENT_LEVEL_12);
         sink.tableRow_();
@@ -168,8 +163,7 @@ public class PropertiesMacro extends AbstractMacro {
      * @param text the text to write.
      */
     private static void writeTableHeaderCell(Sink sink, String text) {
-        sink.rawText(ModuleJavadocParsingUtil.INDENT_LEVEL_14);
-        sink.tableHeaderCell();
+        sink.tableHeaderCell(null);
         sink.text(text);
         sink.tableHeaderCell_();
     }
@@ -196,6 +190,7 @@ public class PropertiesMacro extends AbstractMacro {
             try {
                 final PropertyDetails details = Objects
                         .requireNonNull(propertiesDetails.get(propertyName));
+                sink.rawText(ModuleJavadocParsingUtil.INDENT_LEVEL_12);
                 writePropertyRow(sink, details);
             }
             // -@cs[IllegalCatch] we need to get details in wrapping exception
@@ -236,15 +231,17 @@ public class PropertiesMacro extends AbstractMacro {
      */
     private static void writePropertyRow(Sink sink, PropertyDetails details)
             throws MacroExecutionException {
-        sink.rawText(ModuleJavadocParsingUtil.INDENT_LEVEL_12);
-        sink.tableRow();
-
+        sink.tableRow(null);
+        sink.rawText(ModuleJavadocParsingUtil.INDENT_LEVEL_14);
         writePropertyNameCell(sink, details.getName());
+        sink.rawText(ModuleJavadocParsingUtil.INDENT_LEVEL_14);
         writePropertyDescriptionCell(sink, details.getDescription());
+        sink.rawText(ModuleJavadocParsingUtil.INDENT_LEVEL_14);
         writePropertyTypeCell(sink, details);
+        sink.rawText(ModuleJavadocParsingUtil.INDENT_LEVEL_14);
         writePropertyDefaultValueCell(sink, details);
+        sink.rawText(ModuleJavadocParsingUtil.INDENT_LEVEL_14);
         writePropertySinceVersionCell(sink, details.getSinceVersion());
-
         sink.rawText(ModuleJavadocParsingUtil.INDENT_LEVEL_12);
         sink.tableRow_();
     }
@@ -256,10 +253,9 @@ public class PropertiesMacro extends AbstractMacro {
      * @param propertyName the name of the property.
      */
     private static void writePropertyNameCell(Sink sink, String propertyName) {
-        sink.rawText(ModuleJavadocParsingUtil.INDENT_LEVEL_14);
-        sink.tableCell();
+        sink.tableCell(null);
         sink.rawText("<a id=\"" + propertyName + "\"/>");
-        sink.link(HASHTAG + propertyName);
+        sink.link(HASHTAG + propertyName, null);
         sink.text(propertyName);
         sink.link_();
         sink.tableCell_();
@@ -272,8 +268,7 @@ public class PropertiesMacro extends AbstractMacro {
      * @param description the description.
      */
     private static void writePropertyDescriptionCell(Sink sink, String description) {
-        sink.rawText(ModuleJavadocParsingUtil.INDENT_LEVEL_14);
-        sink.tableCell();
+        sink.tableCell(null);
         sink.rawText(description);
         sink.tableCell_();
     }
@@ -288,9 +283,7 @@ public class PropertiesMacro extends AbstractMacro {
      */
     private static void writePropertyTypeCell(Sink sink, PropertyDetails details)
             throws MacroExecutionException {
-        sink.rawText(ModuleJavadocParsingUtil.INDENT_LEVEL_14);
-        sink.tableCell();
-
+        sink.tableCell(null);
         final PropertyDetails.TokenPropertyType tokenPropertyType =
                 details.getTokenPropertyType();
         if (tokenPropertyType == PropertyDetails.TokenPropertyType.TOKEN_SET) {
@@ -312,7 +305,6 @@ public class PropertiesMacro extends AbstractMacro {
         }
         else {
             final String type = details.getType();
-
             final String relativePathToPropertyTypes =
                     SiteUtil.getLinkToDocument(currentModuleName, PROPERTY_TYPES_XML);
             final String escapedType;
@@ -323,11 +315,9 @@ public class PropertiesMacro extends AbstractMacro {
                 escapedType = type.replace("[", ".5B")
                         .replace("]", ".5D");
             }
-
             final String url =
                     String.format(Locale.ROOT, URL_F, relativePathToPropertyTypes, escapedType);
-
-            sink.link(url);
+            sink.link(url, null);
             sink.text(Objects.requireNonNullElse(type, ""));
             sink.link_();
         }
@@ -346,7 +336,7 @@ public class PropertiesMacro extends AbstractMacro {
                 SiteUtil.getLinkToDocument(currentModuleName, SiteUtil.PATH_TO_TOKEN_TYPES);
 
         sink.text("subset of tokens ");
-        sink.link(link);
+        sink.link(link, null);
         sink.text("TokenTypes");
         sink.link_();
     }
@@ -362,7 +352,7 @@ public class PropertiesMacro extends AbstractMacro {
         sink.rawText(ModuleJavadocParsingUtil.INDENT_LEVEL_16);
         final String link =
                 SiteUtil.getLinkToDocument(currentModuleName, SiteUtil.PATH_TO_TOKEN_TYPES);
-        sink.link(link);
+        sink.link(link, null);
         sink.rawText(ModuleJavadocParsingUtil.INDENT_LEVEL_20);
         sink.text(SiteUtil.TOKENS);
         sink.link_();
@@ -416,7 +406,7 @@ public class PropertiesMacro extends AbstractMacro {
             throws MacroExecutionException {
         final String link = SiteUtil.getLinkToDocument(currentModuleName, document)
                 + HASHTAG + tokenName;
-        sink.link(link);
+        sink.link(link, null);
         sink.rawText(ModuleJavadocParsingUtil.INDENT_LEVEL_20);
         sink.text(tokenName);
         sink.link_();
@@ -431,9 +421,7 @@ public class PropertiesMacro extends AbstractMacro {
      */
     private static void writePropertyDefaultValueCell(Sink sink, PropertyDetails details)
             throws MacroExecutionException {
-        sink.rawText(ModuleJavadocParsingUtil.INDENT_LEVEL_14);
-        sink.tableCell();
-
+        sink.tableCell(null);
         final PropertyDetails.TokenPropertyType type = details.getTokenPropertyType();
         if (type == PropertyDetails.TokenPropertyType.TOKEN_SET
                 && SiteUtil.TOKENS.equals(details.getName())) {
@@ -447,7 +435,6 @@ public class PropertiesMacro extends AbstractMacro {
         else {
             writeStandardDefaultValue(sink, details);
         }
-
         sink.tableCell_();
     }
 
@@ -544,8 +531,7 @@ public class PropertiesMacro extends AbstractMacro {
      * @param sinceVersion the since version.
      */
     private static void writePropertySinceVersionCell(Sink sink, String sinceVersion) {
-        sink.rawText(ModuleJavadocParsingUtil.INDENT_LEVEL_14);
-        sink.tableCell();
+        sink.tableCell(null);
         sink.text(sinceVersion);
         sink.tableCell_();
     }

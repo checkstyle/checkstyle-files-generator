@@ -30,6 +30,7 @@ import java.util.Map;
 
 import javax.swing.text.html.HTML.Attribute;
 
+import org.apache.maven.doxia.macro.Macro;
 import org.apache.maven.doxia.macro.MacroExecutionException;
 import org.apache.maven.doxia.macro.MacroRequest;
 import org.apache.maven.doxia.macro.manager.MacroNotFoundException;
@@ -37,8 +38,8 @@ import org.apache.maven.doxia.module.xdoc.XdocParser;
 import org.apache.maven.doxia.parser.ParseException;
 import org.apache.maven.doxia.parser.Parser;
 import org.apache.maven.doxia.sink.Sink;
+import org.apache.commons.io.IOUtils;
 import org.codehaus.plexus.component.annotations.Component;
-import org.codehaus.plexus.util.IOUtil;
 import org.codehaus.plexus.util.xml.pull.XmlPullParser;
 
 /**
@@ -56,6 +57,9 @@ import org.codehaus.plexus.util.xml.pull.XmlPullParser;
 @Component(role = Parser.class, hint = "xdocs-template")
 public class XdocsTemplateParser extends XdocParser {
 
+    /** Maximum ASCII character value. */
+    private static final int MAX_ASCII = 127;
+
     /** The macro parameters. */
     private final Map<String, Object> macroParameters = new HashMap<>();
 
@@ -68,11 +72,25 @@ public class XdocsTemplateParser extends XdocParser {
     /** A macro name. */
     private String macroName;
 
+    /** The macros map from Plexus. */
+    private Map<String, Macro> macros;
+
     /**
      * Creates a new {@code XdocsTemplateParser} instance.
      */
     public XdocsTemplateParser() {
         // no code by default
+    }
+
+    /**
+     * Set a custom macro executor that uses the provided macros map.
+     * This is the preferred way to inject macros instead of using reflection.
+     *
+     * @param macros the macros map
+     */
+    public void setMacros(Map<String, Macro> macros) {
+        this.macros = macros;
+        setMacroExecutor(new PlexusMacroExecutor(macros));
     }
 
     /**
@@ -87,7 +105,7 @@ public class XdocsTemplateParser extends XdocParser {
     @Override
     public void parse(Reader source, Sink sink, String reference) throws ParseException {
         try (StringWriter contentWriter = new StringWriter()) {
-            IOUtil.copy(source, contentWriter);
+            IOUtils.copy(source, contentWriter);
             sourceContent = contentWriter.toString();
             super.parse(new StringReader(sourceContent), sink, reference);
         }
@@ -103,7 +121,6 @@ public class XdocsTemplateParser extends XdocParser {
     protected void handleStartTag(XmlPullParser parser, Sink sink) throws MacroExecutionException {
         final String tagName = parser.getName();
         if (tagName.equals(DOCUMENT_TAG.toString())) {
-            sink.body();
             sink.rawText(parser.getText());
         }
         else if (tagName.equals(MACRO_TAG.toString()) && !isSecondParsing()) {
@@ -119,12 +136,58 @@ public class XdocsTemplateParser extends XdocParser {
     }
 
     @Override
+    protected void handleText(XmlPullParser parser, Sink sink) {
+        sink.rawText(escapeXml(parser.getText()));
+    }
+
+    /**
+     * Re-escapes XML special characters in text that XmlPullParser has already
+     * decoded (getText() returns decoded entities). sink.rawText() writes output
+     * unescaped, so without this, decoded entities like &quot; would be written
+     * back out as literal characters instead of valid XML entities.
+     * Whitespace is preserved exactly, unlike sink.text() which also normalizes it.
+     *
+     * @param text the text to escape.
+     * @return the escaped text.
+     */
+    private static String escapeXml(String text) {
+        final StringBuilder result = new StringBuilder(text.length());
+        for (int i = 0; i < text.length(); i++) {
+            final char ch = text.charAt(i);
+            switch (ch) {
+                case '&':
+                    result.append("&amp;");
+                    break;
+                case '<':
+                    result.append("&lt;");
+                    break;
+                case '>':
+                    result.append("&gt;");
+                    break;
+                case '"':
+                    result.append("&quot;");
+                    break;
+                default:
+                    if (ch > MAX_ASCII) {
+                        result.append("&#x")
+                                .append(Integer.toHexString(ch))
+                                .append(';');
+                    }
+                    else {
+                        result.append(ch);
+                    }
+                    break;
+            }
+        }
+        return result.toString();
+    }
+
+    @Override
     protected void handleEndTag(XmlPullParser parser, Sink sink) throws MacroExecutionException {
         final String tagName = parser.getName();
         if (!"hr".equalsIgnoreCase(tagName)) {
             if (tagName.equals(DOCUMENT_TAG.toString())) {
                 sink.rawText(parser.getText());
-                sink.body_();
             }
             else if (macroName != null
                     && tagName.equals(MACRO_TAG.toString())
@@ -199,6 +262,8 @@ public class XdocsTemplateParser extends XdocParser {
     private void processMacroEnd(Sink sink) throws MacroExecutionException {
         final XdocsTemplateParser parser = new XdocsTemplateParser();
         parser.setCheckstyleRoot(checkstyleRoot);
+        parser.setMacros(macros);
+
         final MacroRequest request = new MacroRequest(sourceContent,
                 parser, macroParameters, checkstyleRoot.toFile());
 

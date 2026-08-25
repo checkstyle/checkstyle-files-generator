@@ -27,7 +27,6 @@ import org.apache.maven.doxia.macro.AbstractMacro;
 import org.apache.maven.doxia.macro.Macro;
 import org.apache.maven.doxia.macro.MacroExecutionException;
 import org.apache.maven.doxia.macro.MacroRequest;
-import org.apache.maven.doxia.module.xdoc.XdocSink;
 import org.apache.maven.doxia.sink.Sink;
 import org.codehaus.plexus.component.annotations.Component;
 
@@ -46,15 +45,11 @@ public class ViolationMessagesMacro extends AbstractMacro {
 
     @Override
     public void execute(Sink sink, MacroRequest request) throws MacroExecutionException {
-        // until https://github.com/checkstyle/checkstyle/issues/13426
-        if (!(sink instanceof XdocSink xdocSink)) {
-            throw new MacroExecutionException("Expected Sink to be an XdocSink.");
-        }
         final String checkName = (String) request.getParameter("checkName");
         final Object instance = SiteUtil.getModuleInstance(checkName);
         final Class<?> clss = instance.getClass();
         final Set<String> messageKeys = SiteUtil.getMessageKeys(clss);
-        createListOfMessages(xdocSink, clss, messageKeys);
+        createListOfMessages(sink, clss, messageKeys);
     }
 
     /**
@@ -65,15 +60,9 @@ public class ViolationMessagesMacro extends AbstractMacro {
      * @param messageKeys the List of message keys to iterate through.
      */
     private static void createListOfMessages(
-            XdocSink sink, Class<?> clss, Set<String> messageKeys) {
+            Sink sink, Class<?> clss, Set<String> messageKeys) {
         final String indentLevel8 = SiteUtil.getNewlineAndIndentSpaces(8);
-
-        // This is a hack to prevent a newline from being inserted by the default sink.
-        // Once we get rid of the custom parser, we can remove this.
-        // until https://github.com/checkstyle/checkstyle/issues/13426
-        sink.setInsertNewline(false);
-        sink.list();
-        sink.setInsertNewline(true);
+        sink.list(null);
 
         for (String messageKey : messageKeys) {
             createListItem(sink, clss, messageKey);
@@ -89,31 +78,17 @@ public class ViolationMessagesMacro extends AbstractMacro {
      * @param clss the class of the field.
      * @param messageKey the message key.
      */
-    private static void createListItem(XdocSink sink, Class<?> clss, String messageKey) {
+    private static void createListItem(Sink sink, Class<?> clss, String messageKey) {
         final String messageKeyUrl = constructMessageKeyUrl(clss, messageKey);
-        final String indentLevel10 = SiteUtil.getNewlineAndIndentSpaces(10);
-        final String indentLevel12 = SiteUtil.getNewlineAndIndentSpaces(12);
-        final String indentLevel14 = SiteUtil.getNewlineAndIndentSpaces(14);
-        // Place the <li>.
-        sink.rawText(indentLevel10);
-        // This is a hack to prevent a newline from being inserted by the default sink.
-        // Once we get rid of the custom parser, we can remove this.
-        // until https://github.com/checkstyle/checkstyle/issues/13426
-        sink.setInsertNewline(false);
-        sink.listItem();
-        sink.setInsertNewline(true);
-
-        // Place an <a>.
-        sink.rawText(indentLevel12);
-        sink.link(messageKeyUrl);
-        // Further indent the text.
-        sink.rawText(indentLevel14);
-        sink.rawText(messageKey);
-
-        // Place closing </a> and </li> tags.
-        sink.rawText(indentLevel12);
+        sink.rawText(SiteUtil.getNewlineAndIndentSpaces(10));
+        sink.listItem(null);
+        sink.rawText(SiteUtil.getNewlineAndIndentSpaces(12));
+        sink.link(messageKeyUrl, null);
+        sink.rawText(SiteUtil.getNewlineAndIndentSpaces(14));
+        sink.text(messageKey);
+        sink.rawText(SiteUtil.getNewlineAndIndentSpaces(12));
         sink.link_();
-        sink.rawText(indentLevel10);
+        sink.rawText(SiteUtil.getNewlineAndIndentSpaces(10));
         sink.listItem_();
     }
 
