@@ -54,7 +54,7 @@ public class PropertiesMacro extends AbstractMacro {
     private static final String SUBSET_OF_TOKENS = "subset of tokens";
 
     /** Represents the relative path to the property types XML. */
-    private static final String PROPERTY_TYPES_XML = "property_types.xml";
+    private static final String PROPERTY_TYPES_XML = "property-types.xml";
 
     /** The string '#'. */
     private static final String HASHTAG = "#";
