@@ -5,6 +5,9 @@ generating XML metadata and converting XDoc `.xml.template` files into generated
 `.xml` pages. It is not an end-user Checkstyle distribution; it is developed alongside
 the main [Checkstyle repository](https://github.com/checkstyle/checkstyle).
 
+The latest release version can be found at
+[Maven central](https://repo1.maven.org/maven2/com/puppycrawl/tools/checkstyle-files-generator/).
+
 ## Build and verify
 
 Run:
