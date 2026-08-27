@@ -94,7 +94,7 @@ public class XdocsTemplateSink extends XdocSink {
     }
 
     /**
-     * Override paragraph_ to write </p> tag without automatic newline insertion.
+     * Override paragraph_ to write {@code </p>} tag without automatic newline insertion.
      */
     @Override
     public void paragraph_() {
@@ -102,7 +102,7 @@ public class XdocsTemplateSink extends XdocSink {
     }
 
     /**
-     * Override table to write <table> tag without automatic attributes or newlines.
+     * Override table to write {@code <table>} tag without automatic attributes or newlines.
      *
      * @param attributes the attributes (ignored)
      */
@@ -112,7 +112,7 @@ public class XdocsTemplateSink extends XdocSink {
     }
 
     /**
-     * Override table_ to write </table> tag without automatic newline insertion.
+     * Override table_ to write {@code </table>} tag without automatic newline insertion.
      */
     @Override
     public void table_() {
@@ -139,7 +139,7 @@ public class XdocsTemplateSink extends XdocSink {
     }
 
     /**
-     * Override tableRow to write <tr> tag without automatic newline insertion.
+     * Override tableRow to write {@code <tr>} tag without automatic newline insertion.
      *
      * @param attributes the attributes (ignored)
      */
@@ -149,7 +149,7 @@ public class XdocsTemplateSink extends XdocSink {
     }
 
     /**
-     * Override tableRow_ to write </tr> tag without automatic newline insertion.
+     * Override tableRow_ to write {@code </tr>} tag without automatic newline insertion.
      */
     @Override
     public void tableRow_() {
@@ -157,7 +157,7 @@ public class XdocsTemplateSink extends XdocSink {
     }
 
     /**
-     * Override tableCell to write <td> tag without automatic newline insertion.
+     * Override tableCell to write {@code <td>} tag without automatic newline insertion.
      *
      * @param attributes the attributes (ignored)
      */
@@ -167,7 +167,7 @@ public class XdocsTemplateSink extends XdocSink {
     }
 
     /**
-     * Override tableCell_ to write </td> tag without automatic newline insertion.
+     * Override tableCell_ to write {@code </td>} tag without automatic newline insertion.
      */
     @Override
     public void tableCell_() {
@@ -175,7 +175,7 @@ public class XdocsTemplateSink extends XdocSink {
     }
 
     /**
-     * Override tableHeaderCell to write <th> tag without automatic newline insertion.
+     * Override tableHeaderCell to write {@code <th>} tag without automatic newline insertion.
      *
      * @param attributes the attributes (ignored)
      */
@@ -185,7 +185,7 @@ public class XdocsTemplateSink extends XdocSink {
     }
 
     /**
-     * Override tableHeaderCell_ to write </th> tag without automatic newline insertion.
+     * Override tableHeaderCell_ to write {@code </th>} tag without automatic newline insertion.
      */
     @Override
     public void tableHeaderCell_() {
@@ -193,7 +193,7 @@ public class XdocsTemplateSink extends XdocSink {
     }
 
     /**
-     * Override list to write <ul> tag without automatic newline insertion.
+     * Override list to write {@code <ul>} tag without automatic newline insertion.
      *
      * @param attributes the attributes (ignored)
      */
@@ -203,7 +203,7 @@ public class XdocsTemplateSink extends XdocSink {
     }
 
     /**
-     * Override list_ to write </ul> tag without automatic newline insertion.
+     * Override list_ to write {@code </ul>} tag without automatic newline insertion.
      */
     @Override
     public void list_() {
@@ -211,7 +211,7 @@ public class XdocsTemplateSink extends XdocSink {
     }
 
     /**
-     * Override listItem to write <li> tag without automatic newline insertion.
+     * Override listItem to write {@code <li>} tag without automatic newline insertion.
      *
      * @param attributes the attributes (ignored)
      */
@@ -221,7 +221,7 @@ public class XdocsTemplateSink extends XdocSink {
     }
 
     /**
-     * Override listItem_ to write </li> tag without automatic newline insertion.
+     * Override listItem_ to write {@code </li>} tag without automatic newline insertion.
      */
     @Override
     public void listItem_() {
@@ -229,7 +229,7 @@ public class XdocsTemplateSink extends XdocSink {
     }
 
     /**
-     * Override link to write <a> tag without automatic externalLink class.
+     * Override link to write {@code <a>} tag without automatic externalLink class.
      *
      * @param href the href attribute
      * @param attributes the attributes (ignored)
@@ -240,7 +240,7 @@ public class XdocsTemplateSink extends XdocSink {
     }
 
     /**
-     * Override link_ to write </a> tag without automatic newline insertion.
+     * Override link_ to write {@code </a>} tag without automatic newline insertion.
      */
     @Override
     public void link_() {
