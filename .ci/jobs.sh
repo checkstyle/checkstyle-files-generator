@@ -9,6 +9,14 @@ verify)
   ./mvnw -B clean verify
   ;;
 
+release-dry-run)
+  ./mvnw -e -ntp -B \
+    release:prepare \
+    -DdryRun=true \
+    -Darguments='-Pcentral-release -Dgpg.skip=true -ntp'
+  ./mvnw -B release:clean
+  ;;
+
 clean-install-skip-tests)
   ./mvnw -B clean install -DskipTests
   ;;

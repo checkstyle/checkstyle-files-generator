@@ -28,3 +28,6 @@ jobs:
 
       - name: Run verification
         run: ./.ci/jobs.sh verify
+
+      - name: Maven release dry run
+        run: ./.ci/jobs.sh release-dry-run
