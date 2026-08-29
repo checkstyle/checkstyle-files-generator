@@ -221,7 +221,16 @@ public class ExampleMacro extends AbstractMacro {
             throw new IllegalArgumentException(message);
         }
 
-        final List<String> configLines = linesList.subList(1, endIndex);
+        final int startIndex;
+        if (PROPERTIES_EXTENSION.equals(extension)) {
+            // Properties files use # delimiter, line 0 contains config
+            startIndex = 0;
+        }
+        else {
+            // Non-properties files, always skip line 0 (marker line)
+            startIndex = 1;
+        }
+        final List<String> configLines = linesList.subList(startIndex, endIndex);
         final String result;
         if (PROPERTIES_EXTENSION.equals(extension)) {
             result = String.join(ModuleJavadocParsingUtil.NEWLINE,
