@@ -16,7 +16,7 @@ if [ "$(git status | grep 'Changes not staged\|Untracked files')" ]; then
   echo "Changes detected in checkstyle repository after xdoc generation."
   echo "Git status output:"
   git status
-  echo "Top 300 lines of diff:"
-  git diff | head -n 300
+  echo "Git diff output:"
+  git diff
   exit 1
 fi
