@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<document xmlns="http://maven.apache.org/XDOC/2.0"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:schemaLocation="http://maven.apache.org/XDOC/2.0
+                              https://maven.apache.org/xsd/xdoc-2.0.xsd">
+  <head>
+    <title>Redirecting</title>
+    <noscript>
+      <meta http-equiv="refresh" content="0; url=${destination}"/>
+    </noscript>
+  </head>
+
+  <body>
+    <section name="Redirecting">
+      <script type="text/javascript"><![CDATA[
+        const currentUrl = new URL(window.location.href);
+        const fragment = currentUrl.hash.substring(1);
+
+        let redirectPath = "${destination}";
+        let preserveFragment = true;
+
+        if (/^[A-Za-z][A-Za-z0-9]*$/.test(fragment)) {
+            redirectPath = "${fragmentDestination}".replace(
+                "{fragment-lower}", fragment.toLowerCase());
+            preserveFragment = false;
+        }
+
+        const destination = new URL(redirectPath, currentUrl);
+
+        destination.search = currentUrl.search;
+
+        if (preserveFragment) {
+            destination.hash = currentUrl.hash;
+        }
+
+        window.location.replace(destination.href);
+      //]]></script>
+
+      <p>This page moved to
+        <a href="${destination}">${destination}</a>.
+      </p>
+    </section>
+  </body>
+</document>

@@ -4,6 +4,7 @@ import java.nio.file.Path;
 import java.util.concurrent.Callable;
 
 import com.puppycrawl.tools.checkstyle.filesgenerator.meta.MetadataGeneratorUtil;
+import com.puppycrawl.tools.checkstyle.filesgenerator.site.SiteRedirectGenerator;
 import com.puppycrawl.tools.checkstyle.filesgenerator.site.XdocGenerator;
 
 import picocli.CommandLine;
@@ -13,7 +14,7 @@ import picocli.CommandLine.Parameters;
 
 @Command(
     name = "checkstyle-files-generator",
-    description = "Generates metadata and XDoc files in the specified Checkstyle directory.",
+    description = "Generates metadata, XDoc files, and site redirects.",
     mixinStandardHelpOptions = true
 )
 public final class Main implements Callable<Integer> {
@@ -26,6 +27,9 @@ public final class Main implements Callable<Integer> {
 
     @Option(names = "--generateXdoc", description = "Generate XDoc files.")
     private boolean generateXdoc;
+
+    @Option(names = "--generateRedirects", description = "Generate site redirect XDoc files.")
+    private boolean generateRedirects;
 
     /** Entry point for standalone command-line use. */
     public static void main(String[] args) {
@@ -45,7 +49,7 @@ public final class Main implements Callable<Integer> {
 
     @Override
     public Integer call() throws Exception {
-        if (!generateMetadata && !generateXdoc) {
+        if (!generateMetadata && !generateXdoc && !generateRedirects) {
             throw new CommandLine.ParameterException(new CommandLine(this),
                     "At least one generation option is required.");
         }
@@ -54,6 +58,9 @@ public final class Main implements Callable<Integer> {
         }
         if (generateXdoc) {
             XdocGenerator.generate(checkstylePath);
+        }
+        if (generateRedirects) {
+            SiteRedirectGenerator.generate(checkstylePath);
         }
         return 0;
     }
