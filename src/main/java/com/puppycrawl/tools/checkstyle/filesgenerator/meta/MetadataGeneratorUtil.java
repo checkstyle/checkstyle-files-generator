@@ -37,11 +37,13 @@ public final class MetadataGeneratorUtil {
      * Generate metadata from the module source files available in the input argument path.
      *
      * @param checkstylePath path to the checkstyle source code directory
+     * @param outputDirectories roots for generated metadata
      * @param moduleFolders folders to check
      * @throws IOException ioException
      * @throws CheckstyleException checkstyleException
      */
-    public static void generate(Path checkstylePath, String... moduleFolders)
+    public static void generate(Path checkstylePath, List<Path> outputDirectories,
+            String... moduleFolders)
             throws IOException, CheckstyleException {
         SiteUtil.initialize(checkstylePath);
         final String checkstyleModulesDir = checkstylePath.resolve(
@@ -68,7 +70,7 @@ public final class MetadataGeneratorUtil {
                 }
 
                 final ModuleDetails moduleDetails = getModuleDetails(file);
-                writeMetadataFile(moduleDetails, checkstylePath);
+                writeMetadataFile(moduleDetails, outputDirectories);
             }
         }
         catch (MacroExecutionException macroException) {
@@ -194,13 +196,14 @@ public final class MetadataGeneratorUtil {
      * Write metadata file for the given module.
      *
      * @param moduleDetails module details.
-     * @param checkstylePath path to the checkstyle source code directory
+     * @param outputDirectories roots for generated metadata
      * @throws CheckstyleException if an error occurs during writing metadata file.
      */
-    private static void writeMetadataFile(ModuleDetails moduleDetails, Path checkstylePath)
+    private static void writeMetadataFile(ModuleDetails moduleDetails,
+            List<Path> outputDirectories)
             throws CheckstyleException {
         try {
-            XmlMetaWriter.write(moduleDetails, checkstylePath);
+            XmlMetaWriter.write(moduleDetails, outputDirectories);
         }
         catch (IOException | TransformerException | ParserConfigurationException example) {
             throw new CheckstyleException(

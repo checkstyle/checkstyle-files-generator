@@ -52,12 +52,12 @@ public final class XmlMetaWriter {
      * Helper function to write module details to XML file.
      *
      * @param moduleDetails module details
-     * @param checkstylePath path to the checkstyle source code directory
+     * @param outputDirectories roots for generated metadata
      * @throws TransformerException if a transformer exception occurs
      * @throws ParserConfigurationException if a parser configuration exception occurs
      * @throws IOException if an output directory cannot be created
      */
-    public static void write(ModuleDetails moduleDetails, Path checkstylePath)
+    public static void write(ModuleDetails moduleDetails, List<Path> outputDirectories)
             throws TransformerException, ParserConfigurationException, IOException {
         final DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
         dbFactory.setAttribute(XMLConstants.ACCESS_EXTERNAL_DTD, "");
@@ -96,10 +96,9 @@ public final class XmlMetaWriter {
         }
 
         final Path relativeOutputPath = getRelativeOutputPath(moduleDetails);
-        writeToFile(doc, checkstylePath.resolve("src/main/resources")
-                .resolve(relativeOutputPath));
-        writeToFile(doc, checkstylePath.resolve("target/classes")
-                .resolve(relativeOutputPath));
+        for (Path outputDirectory : outputDirectories) {
+            writeToFile(doc, outputDirectory.resolve(relativeOutputPath));
+        }
     }
 
     /**
