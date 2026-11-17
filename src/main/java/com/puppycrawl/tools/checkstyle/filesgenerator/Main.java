@@ -1,6 +1,7 @@
 package com.puppycrawl.tools.checkstyle.filesgenerator;
 
 import java.nio.file.Path;
+import java.util.List;
 import java.util.concurrent.Callable;
 
 import com.puppycrawl.tools.checkstyle.filesgenerator.meta.MetadataGeneratorUtil;
@@ -23,6 +24,10 @@ public final class Main implements Callable<Integer> {
 
     @Option(names = "--generateMetadata", description = "Generate metadata files.")
     private boolean generateMetadata;
+
+    @Option(names = "--metadataOutputDirectory", paramLabel = "DIR",
+            description = "Write metadata only under DIR when generating metadata.")
+    private Path metadataOutputDirectory;
 
     @Option(names = "--generateXdoc", description = "Generate XDoc files.")
     private boolean generateXdoc;
@@ -49,8 +54,21 @@ public final class Main implements Callable<Integer> {
             throw new CommandLine.ParameterException(new CommandLine(this),
                     "At least one generation option is required.");
         }
+        if (metadataOutputDirectory != null && !generateMetadata) {
+            throw new CommandLine.ParameterException(new CommandLine(this),
+                    "--metadataOutputDirectory requires --generateMetadata.");
+        }
         if (generateMetadata) {
-            MetadataGeneratorUtil.generate(checkstylePath, "checks", "filters", "filefilters");
+            final List<Path> outputDirectories;
+            if (metadataOutputDirectory == null) {
+                outputDirectories = List.of(checkstylePath.resolve("src/main/resources"),
+                        checkstylePath.resolve("target/classes"));
+            }
+            else {
+                outputDirectories = List.of(metadataOutputDirectory);
+            }
+            MetadataGeneratorUtil.generate(checkstylePath, outputDirectories,
+                    "checks", "filters", "filefilters");
         }
         if (generateXdoc) {
             XdocGenerator.generate(checkstylePath);
