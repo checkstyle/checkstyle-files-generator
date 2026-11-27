@@ -34,6 +34,12 @@ runtime classpath is provided by the freshly compiled Checkstyle checkout.
 Normal development is driven through the Checkstyle build rather than by invoking the
 thin jar directly, because the command requires Checkstyle's build classes and dependencies.
 
+To generate metadata in a separate directory, pass
+`--generateMetadata --metadataOutputDirectory /path/to/output` to the generator.
+The option changes the output root and preserves the relative metadata paths.
+Without it, metadata is written to both `src/main/resources` and `target/classes`
+under the Checkstyle checkout.
+
 ## Releases
 
 This repository follows the same Maven release approach as the main Checkstyle repository, using
